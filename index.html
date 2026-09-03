@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Numerix Drift — a single-player math puzzle for mobile. Swipe drifting number tiles, choose an operator, and land exactly on the target before your moves run out.">
+<meta name="description" content="Numerix Drift — a single-player math puzzle for mobile. Swipe drifting number tiles across 1,200 islands, choose an operator, and land exactly on the target before your moves run out.">
 <title>Numerix Drift</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +13,7 @@
     --bg:#0b0e1a;
     --bg-2:#11162a;
     --panel:#151b33;
+    --panel-2:#1a2140;
     --cell:#1b2240;
     --cell-border:#262f54;
     --ink:#eef1fb;
@@ -73,7 +74,8 @@
   #app{
     position:relative;z-index:1;
     max-width:460px;margin:0 auto;
-    min-height:100vh;
+    height:100vh;
+    height:100dvh;
     display:flex;flex-direction:column;
     padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   }
@@ -115,7 +117,7 @@
   .islet i:nth-child(3){width:34px;height:34px;left:74px;top:34px;background:var(--tile-mirror);color:var(--tile-mirror);transform:rotate(16deg);}
 
   /* ---------- header (shared) ---------- */
-  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-shrink:0;}
   .topbar h2{font-size:19px;font-weight:600;flex:1;text-align:center;}
   .iconbtn{
     width:38px;height:38px;border-radius:10px;background:var(--panel);
@@ -125,41 +127,78 @@
   }
   .iconbtn:active{transform:scale(.94);}
 
-  /* ---------- level select ---------- */
-  #levels-scroll{flex:1;overflow-y:auto;padding-bottom:20px;-webkit-overflow-scrolling:touch;}
-  .world-block{margin-bottom:26px;}
-  .world-head{margin-bottom:4px;}
-  .world-head h3{font-size:18px;font-weight:600;}
-  .world-blurb{color:var(--ink-dim);font-size:13px;margin:2px 0 12px;}
-  .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .level-card{
-    aspect-ratio:1;border-radius:14px;background:var(--panel);
-    border:1px solid var(--cell-border);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-    cursor:pointer;position:relative;
+  /* ---------- world select ---------- */
+  .worlds-scroll{flex:1;overflow-y:auto;padding-bottom:20px;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px;}
+  .world-card{
+    display:flex;align-items:center;gap:12px;
+    background:var(--panel);border:1px solid var(--cell-border);border-radius:16px;
+    padding:12px 14px;cursor:pointer;
   }
-  .level-card .num{font-family:var(--font-mono);font-size:20px;font-weight:700;}
-  .level-card .stars{font-size:11px;letter-spacing:2px;color:var(--accent);}
-  .level-card.locked{opacity:.4;cursor:default;}
-  .level-card.locked .num{visibility:hidden;}
-  .level-card.locked::after{content:'🔒';font-size:16px;position:absolute;}
-  .level-card:not(.locked):active{transform:scale(.95);}
+  .world-card.locked{opacity:.45;cursor:default;}
+  .wc-num{
+    font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--ink-faint);
+    width:34px;height:34px;border-radius:9px;background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .wc-body{flex:1;min-width:0;}
+  .wc-body h3{font-size:15.5px;font-weight:600;margin-bottom:1px;}
+  .wc-body p{color:var(--ink-dim);font-size:12.5px;margin:0 0 8px;line-height:1.4;}
+  .wc-progress{display:flex;align-items:center;gap:8px;}
+  .wc-bar{flex:1;height:5px;border-radius:3px;background:var(--cell);overflow:hidden;}
+  .wc-bar span{display:block;height:100%;background:var(--accent);border-radius:3px;}
+  .wc-count{font-family:var(--font-mono);font-size:11px;color:var(--ink-faint);flex-shrink:0;}
+  .wc-locked-label{font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+
+  /* ---------- path screen ---------- */
+  .path-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative;}
+  .path-canvas{position:relative;width:100%;min-height:200px;padding-bottom:60px;}
+  .path-svg{position:absolute;top:0;left:0;width:100%;display:block;}
+  .path-line-bg{fill:none;stroke:var(--cell-border);stroke-width:5;stroke-linecap:round;stroke-dasharray:2 14;}
+  .path-line-fg{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;opacity:.85;}
+  .path-node{
+    position:absolute;transform:translate(-50%,-50%);
+    width:50px;height:50px;border-radius:50%;
+    background:var(--panel);border:2px solid var(--cell-border);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;padding:0;color:var(--ink);
+  }
+  .path-node .pn-num{font-family:var(--font-mono);font-weight:700;font-size:16px;}
+  .path-node .pn-stars{font-size:8px;letter-spacing:1px;color:var(--accent);margin-top:1px;}
+  .path-node .pn-time{font-size:7.5px;color:var(--ink-faint);font-family:var(--font-mono);margin-top:1px;}
+  .path-node.done{border-color:var(--accent);}
+  .path-node.locked{opacity:.4;cursor:default;background:var(--bg-2);}
+  .path-node.locked .pn-lock{font-size:16px;}
+  .path-node:not(.locked):active{transform:translate(-50%,-50%) scale(.92);}
+  .path-node.milestone{
+    width:66px;height:66px;background:var(--panel-2);border-color:var(--accent);
+    box-shadow:0 0 0 4px rgba(242,166,90,.12);
+  }
+  .path-node.milestone .pn-num{font-size:19px;color:var(--accent);}
+  .path-node.milestone::before{content:'🚩';position:absolute;top:-16px;font-size:14px;}
 
   /* ---------- game screen ---------- */
-  #screen-game, #screen-daily{gap:14px;}
-  .hud{
-    display:flex;gap:10px;
+  #screen-game, #screen-daily{gap:12px;min-height:0;}
+  .targets-row{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+  .target-chip{
+    flex:1;min-width:64px;background:var(--panel);border:1px solid var(--cell-border);
+    border-radius:12px;padding:8px 10px;text-align:center;position:relative;
   }
+  .target-chip .tc-num{font-family:var(--font-mono);font-weight:700;font-size:19px;color:var(--accent);font-variant-numeric:tabular-nums;}
+  .target-chip.hit{border-color:var(--good);background:rgba(111,207,122,.1);}
+  .target-chip.hit .tc-num{color:var(--good);text-decoration:line-through;text-decoration-color:rgba(111,207,122,.5);}
+  .target-chip .tc-check{position:absolute;top:2px;right:6px;font-size:10px;color:var(--good);}
+
+  .stats-row{display:flex;gap:10px;flex-shrink:0;}
   .hud-tile{
     flex:1;background:var(--panel);border:1px solid var(--cell-border);
     border-radius:14px;padding:10px 14px;text-align:center;
   }
   .hud-tile .label{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);font-weight:700;}
-  .hud-tile .value{font-family:var(--font-mono);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
-  .hud-tile.target .value{color:var(--accent);}
+  .hud-tile .value{font-family:var(--font-mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;}
   .hud-tile.moves .value.low{color:var(--bad);}
+  .hud-tile.time .best{font-size:10px;color:var(--ink-faint);font-family:var(--font-mono);margin-top:2px;min-height:12px;}
 
-  .ops-row{display:flex;gap:8px;}
+  .ops-row{display:flex;gap:8px;flex-shrink:0;}
   .op-btn{
     flex:1;padding:12px 0;border-radius:12px;background:var(--panel);
     border:1px solid var(--cell-border);color:var(--ink-dim);
@@ -173,7 +212,7 @@
     position:relative;width:100%;max-width:420px;margin:0 auto;
     aspect-ratio:1;background:var(--bg-2);border-radius:18px;
     border:1px solid var(--cell-border);padding:8px;
-    touch-action:none;
+    touch-action:none;flex-shrink:0;
   }
   .board-grid{
     position:absolute;inset:8px;display:grid;
@@ -200,9 +239,6 @@
   .tile-mirror::after{content:'±';}
   .tile-wildcard::after{content:'?';}
 
-  .game-foot{display:flex;gap:10px;margin-top:auto;}
-  .game-foot .btn{flex:1;}
-
   /* ---------- overlay ---------- */
   .overlay{
     position:absolute;inset:0;z-index:5;
@@ -220,6 +256,7 @@
   .overlay-actions{display:flex;flex-direction:column;gap:10px;}
   .win .overlay-card h3{color:var(--good);}
   .lose .overlay-card h3{color:var(--bad);}
+  .overlay-done{color:var(--good);font-weight:700;margin:0 0 12px;font-size:14px;}
 
   /* ---------- daily ---------- */
   .share-box{
@@ -268,17 +305,29 @@
       <button class="btn btn-block" id="btn-daily">Daily Drift · <span id="daily-num-label">#1</span></button>
       <button class="btn btn-ghost btn-block" id="btn-help">How to Play</button>
     </div>
-    <p class="title-foot">12 islands across 4 currents · no ads mid-puzzle</p>
+    <p class="title-foot">1,200 islands across 30 currents · no ads mid-puzzle</p>
   </section>
 
-  <!-- LEVEL SELECT -->
-  <section id="screen-levels" class="screen">
+  <!-- WORLD SELECT -->
+  <section id="screen-worlds" class="screen">
     <div class="topbar">
       <button class="iconbtn" data-nav="screen-title" aria-label="Back">←</button>
-      <h2>Choose an Island</h2>
+      <h2>Choose a Current</h2>
       <span style="width:38px"></span>
     </div>
-    <div id="levels-scroll"></div>
+    <div id="worlds-scroll" class="worlds-scroll"></div>
+  </section>
+
+  <!-- PATH (levels within a world) -->
+  <section id="screen-path" class="screen">
+    <div class="topbar">
+      <button class="iconbtn" id="path-back" aria-label="Back">←</button>
+      <h2 id="path-title">World</h2>
+      <span style="width:38px"></span>
+    </div>
+    <div class="path-scroll">
+      <div id="path-canvas" class="path-canvas"></div>
+    </div>
   </section>
 
   <!-- HOW TO PLAY -->
@@ -291,7 +340,7 @@
     <div class="help-body">
       <div class="help-section">
         <h4>Goal</h4>
-        <p>Every island shows a <strong>target number</strong>. Swipe to slide every tile at once. Tiles that collide combine into one — land a tile exactly on the target before your moves run out.</p>
+        <p>Every island shows one or more <strong>target numbers</strong>. Swipe to slide every tile at once. Tiles that collide combine into one — land a tile exactly on each target before your moves run out.</p>
       </div>
       <div class="help-section">
         <h4>Operators</h4>
@@ -315,8 +364,12 @@
         </div>
       </div>
       <div class="help-section">
-        <h4>Moves</h4>
-        <p>Each swipe costs one move, even if nothing merges. A swipe that changes nothing on the board is free. Fewer moves used earns more stars.</p>
+        <h4>Harder Islands</h4>
+        <p>Later currents show two or three targets at once, often laid out in separate rows. Every target you've hit stays checked off, even after that tile merges again — clear them all within the move limit.</p>
+      </div>
+      <div class="help-section">
+        <h4>Moves &amp; Time</h4>
+        <p>Each swipe costs one move, even if nothing merges. A swipe that changes nothing on the board is free. Fewer moves earns more stars, and your fastest clear is saved as that island's best time.</p>
       </div>
     </div>
   </section>
@@ -328,9 +381,10 @@
       <h2 id="game-title">Level</h2>
       <button class="iconbtn" id="game-restart" aria-label="Restart">↺</button>
     </div>
-    <div class="hud">
-      <div class="hud-tile target"><div class="label">Target</div><div class="value" id="hud-target">0</div></div>
+    <div class="targets-row" id="targets-row"></div>
+    <div class="stats-row">
       <div class="hud-tile moves"><div class="label">Moves Left</div><div class="value" id="hud-moves">0</div></div>
+      <div class="hud-tile time"><div class="label">Time</div><div class="value" id="hud-time">0:00.0</div><div class="best" id="hud-best"></div></div>
     </div>
     <div class="ops-row" id="ops-row"></div>
     <div class="board-wrap" id="board-wrap">
@@ -354,9 +408,10 @@
       <h2 id="daily-title">Daily Drift</h2>
       <button class="iconbtn" id="daily-restart" aria-label="Restart">↺</button>
     </div>
-    <div class="hud">
-      <div class="hud-tile target"><div class="label">Target</div><div class="value" id="daily-hud-target">0</div></div>
+    <div class="targets-row" id="daily-targets-row"></div>
+    <div class="stats-row">
       <div class="hud-tile moves"><div class="label">Moves Left</div><div class="value" id="daily-hud-moves">0</div></div>
+      <div class="hud-tile time"><div class="label">Time</div><div class="value" id="daily-hud-time">0:00.0</div></div>
     </div>
     <div class="ops-row" id="daily-ops-row"></div>
     <div class="board-wrap" id="daily-board-wrap">
@@ -382,31 +437,46 @@
 (function(){
   'use strict';
 
-  /* ================= LEVEL DATA ================= */
+  /* ================= WORLD DATA ================= */
   var WORLDS = [
     {name:'Shallow Waters', blurb:'Where the drift begins — plain addition.'},
     {name:'Tidal Drift', blurb:'The current learns to multiply.'},
     {name:'Undertow', blurb:'Numbers get pulled below zero.'},
-    {name:'Deep Current', blurb:'Some islands hold their ground.'}
+    {name:'Deep Current', blurb:'Some islands hold their ground.'},
+    {name:'Coral Maze', blurb:'Every branch hides a different sum.'},
+    {name:'Salt Fog', blurb:"Visibility drops. Precision doesn't."},
+    {name:'Driftglass', blurb:'Smoothed by pressure, sharpened by need.'},
+    {name:'Midnight Reef', blurb:'The islands glow before they merge.'},
+    {name:'Kelp Forest', blurb:'Tangled paths, tidy arithmetic.'},
+    {name:'Sunken Bell', blurb:'Something down here keeps perfect time.'},
+    {name:'Riptide', blurb:'Fewer moves. Faster currents.'},
+    {name:'The Narrows', blurb:'No room left for a wasted swipe.'},
+    {name:'Ghost Current', blurb:"Numbers that shouldn't add up, do."},
+    {name:'Whale Road', blurb:'Long chains, longer memory.'},
+    {name:'Abyssal Line', blurb:'Past this depth, nothing rounds up.'},
+    {name:'Cold Fathom', blurb:'Every operator, all at once.'},
+    {name:'Bioluminescent Deep', blurb:'Light enough to see three targets.'},
+    {name:'The Trench', blurb:'The board gets crowded down here.'},
+    {name:'Silt & Static', blurb:'The numbers blur before they land.'},
+    {name:'Pressure Point', blurb:"One extra move would help. There isn't one."},
+    {name:'Black Water', blurb:"You won't see the target coming."},
+    {name:'The Hadal Gate', blurb:'Past the edge of the charted current.'},
+    {name:'Echo Chamber', blurb:'Every solved equation answers another.'},
+    {name:'Drowned Archive', blurb:'Old sums, resurfacing.'},
+    {name:'Tide of Forgetting', blurb:'The islands remember less each time.'},
+    {name:'Undrift', blurb:'Working against the current, on purpose.'},
+    {name:'The Last Current', blurb:'Almost nothing left to hold onto.'},
+    {name:'Memory Reef', blurb:"What's left, drifting together."},
+    {name:'Surface Tension', blurb:"One swipe from breaking through."},
+    {name:'The Last Light', blurb:'Land every number. Let it go.'}
   ];
 
-  var LEVELS = [
-    {world:0, target:7,  moves:2, ops:['+'],             tiles:[{r:0,c:0,type:'num',value:3},{r:0,c:3,type:'num',value:4}]},
-    {world:0, target:8,  moves:2, ops:['+'],             tiles:[{r:0,c:0,type:'num',value:2},{r:0,c:1,type:'num',value:5},{r:0,c:3,type:'num',value:1}]},
-    {world:0, target:9,  moves:1, ops:['+'],             tiles:[{r:0,c:0,type:'num',value:6},{r:3,c:0,type:'num',value:3}]},
-
-    {world:1, target:12, moves:1, ops:['+','×'],         tiles:[{r:0,c:0,type:'num',value:3},{r:0,c:1,type:'num',value:4}]},
-    {world:1, target:8,  moves:1, ops:['+','×'],         tiles:[{r:0,c:0,type:'num',value:4},{r:0,c:1,type:'wildcard'}]},
-    {world:1, target:12, moves:2, ops:['+','×'],         tiles:[{r:0,c:0,type:'num',value:2},{r:0,c:1,type:'num',value:3},{r:0,c:3,type:'wildcard'}]},
-
-    {world:2, target:6,  moves:1, ops:['+','×','−'],     tiles:[{r:0,c:0,type:'num',value:10},{r:0,c:1,type:'num',value:4}]},
-    {world:2, target:-8, moves:1, ops:['+','×','−'],     tiles:[{r:0,c:0,type:'num',value:8},{r:0,c:1,type:'mirror'}]},
-    {world:2, target:4,  moves:2, ops:['+','×','−'],     tiles:[{r:0,c:0,type:'num',value:3},{r:0,c:1,type:'num',value:7},{r:0,c:3,type:'mirror'}]},
-
-    {world:3, target:5,  moves:1, ops:['+','×','−','÷'], tiles:[{r:0,c:0,type:'num',value:20},{r:0,c:1,type:'num',value:4}]},
-    {world:3, target:12, moves:1, ops:['+','×','−','÷'], tiles:[{r:0,c:0,type:'freeze'},{r:0,c:1,type:'num',value:6},{r:0,c:2,type:'num',value:6}]},
-    {world:3, target:12, moves:3, ops:['+','×','−','÷'], tiles:[{r:0,c:0,type:'freeze'},{r:0,c:1,type:'num',value:2},{r:0,c:2,type:'num',value:3},{r:0,c:3,type:'wildcard'}]}
-  ];
+  var LEVELS_PER_WORLD = 40;
+  var NUM_WORLDS = WORLDS.length; // 30
+  var TOTAL_LEVELS = LEVELS_PER_WORLD * NUM_WORLDS; // 1200
+  var GRID = 4;
+  var OP_LABEL = {'+':'+','−':'−','×':'×','÷':'÷'};
+  var OP_ORDER = ['+','×','−','÷'];
 
   var DAILY_POOL = [
     {target:8,  moves:2, ops:['+'],             tiles:[{r:0,c:0,type:'num',value:5},{r:0,c:3,type:'num',value:3}]},
@@ -418,13 +488,11 @@
     {target:6,  moves:1, ops:['+','×','−','÷'], tiles:[{r:0,c:0,type:'num',value:18},{r:0,c:1,type:'num',value:3}]}
   ];
 
-  var GRID = 4;
-  var OP_LABEL = {'+':'+','−':'−','×':'×','÷':'÷'};
-
   /* ================= STATE ================= */
   var state = {
-    board: null,        // GRID x GRID of tile|null
-    target: 0,
+    board: null,
+    targets: [],
+    achieved: [],
     movesLeft: 0,
     movesTotal: 0,
     ops: [],
@@ -433,22 +501,26 @@
     won: false,
     mode: null,         // 'level' | 'daily'
     levelIndex: -1,
-    tileEls: {}          // id -> element   (per-board; reset on load)
+    world: 0,
+    startTime: 0,
+    timerHandle: null,
+    tileEls: {}
   };
 
   var nextTileId = 1;
   function freshId(){ return 't' + (nextTileId++); }
 
   /* ================= PERSISTENCE ================= */
-  var SAVE_KEY = 'numerixdrift_progress_v1';
+  var SAVE_KEY = 'numerixdrift_progress_v2';
   function loadProgress(){
     try{
       var raw = localStorage.getItem(SAVE_KEY);
-      if(!raw) return {stars:{}};
+      if(!raw) return {stars:{}, best:{}};
       var parsed = JSON.parse(raw);
       if(!parsed.stars) parsed.stars = {};
+      if(!parsed.best) parsed.best = {};
       return parsed;
-    }catch(e){ return {stars:{}}; }
+    }catch(e){ return {stars:{}, best:{}}; }
   }
   function saveProgress(p){
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(p)); }catch(e){}
@@ -520,23 +592,20 @@
       for(var c2=0;c2<GRID;c2++){
         var line2 = [];
         for(var r2=0;r2<GRID;r2++) line2.push({r: direction==='up'? r2 : (GRID-1-r2), c:c2});
-        lines2push(line2);
+        lines.push(line2);
       }
     }
     return lines;
-    function lines2push(l){ lines.push(l); }
   }
 
   function cloneBoard(board){
     var b = [];
-    for(var r=0;r<GRID;r++){
-      b.push(board[r].slice());
-    }
+    for(var r=0;r<GRID;r++) b.push(board[r].slice());
     return b;
   }
 
   function swipe(direction){
-    if(state.over) return;
+    if(state.over) return false;
     var lines = getLines(direction);
     var newBoard = cloneBoard(state.board);
     var changed = false;
@@ -568,7 +637,7 @@
           var newVal = merged[idx] || null;
           var oldVal = state.board[coord.r][coord.c];
           newBoard[coord.r][coord.c] = newVal;
-          if(!sameTileRef(oldVal, newVal, tiles, merged)) changed = true;
+          if(!sameTileRef(oldVal, newVal)) changed = true;
         });
       });
     });
@@ -585,6 +654,134 @@
     state.movesLeft -= 1;
     renderBoard();
     return true;
+  }
+
+  /* ================= PROCEDURAL LEVEL GENERATOR ================= */
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function randInt(rng, min, max){ return Math.floor(rng()*(max-min+1))+min; }
+  function choice(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
+
+  function divisorsOf(n){
+    if(n===0) return [2,3,4,5,6];
+    var a = Math.abs(n);
+    if(a<2) return [];
+    var out=[];
+    for(var d=2; d<=a; d++){ if(a%d===0) out.push(d); }
+    return out;
+  }
+
+  // Difficulty bands, 5 worlds each (0-indexed world ranges).
+  var BANDS = [
+    {ops:['+'],                 maxGroups:1, freeze:false, special:false},
+    {ops:['+','×'],             maxGroups:1, freeze:false, special:true},
+    {ops:['+','×','−'],         maxGroups:2, freeze:false, special:true},
+    {ops:['+','×','−','÷'],     maxGroups:2, freeze:true,  special:true},
+    {ops:['+','×','−','÷'],     maxGroups:3, freeze:true,  special:true},
+    {ops:['+','×','−','÷'],     maxGroups:3, freeze:true,  special:true}
+  ];
+  function bandForWorld(w){ return BANDS[Math.min(BANDS.length-1, Math.floor(w/5))]; }
+
+  // Builds one target-group's merge chain, reusing the exact engine mergeTiles()
+  // so the generated target is guaranteed to match what the game will compute.
+  function buildChain(rng, opsSeq, chainLen, operandRange, allowSpecial){
+    var start = {id:'gen', type:'num', value: randInt(rng, operandRange[0], operandRange[1])};
+    var tiles = [start];
+    var current = start;
+    for(var i=0;i<chainLen;i++){
+      var op = opsSeq[i];
+      var special = (allowSpecial && rng()<0.28) ? (rng()<0.5?'mirror':'wildcard') : null;
+      var nextTile;
+      if(special==='mirror'){
+        nextTile = {id:'gen', type:'mirror'};
+      } else if(special==='wildcard'){
+        nextTile = {id:'gen', type:'wildcard'};
+      } else if(op==='÷'){
+        var divs = divisorsOf(current.value).filter(function(d){ return d>1; });
+        var d = divs.length ? choice(rng, divs) : 1;
+        nextTile = {id:'gen', type:'num', value:d};
+      } else if(op==='×'){
+        var mHi = Math.max(2, Math.min(9, operandRange[1]));
+        nextTile = {id:'gen', type:'num', value: randInt(rng, 2, mHi)};
+      } else {
+        nextTile = {id:'gen', type:'num', value: randInt(rng, operandRange[0], operandRange[1])};
+      }
+      tiles.push(nextTile);
+      current = mergeTiles(current, nextTile, op);
+    }
+    return {tiles:tiles, target: current.value};
+  }
+
+  function opsButtonsFor(opsSeq){
+    var set = {};
+    opsSeq.forEach(function(o){ set[o]=true; });
+    return OP_ORDER.filter(function(o){ return set[o]; });
+  }
+
+  function generateLevel(index){
+    var seed = ((index+1) * 2654435761) >>> 0;
+    var rng = mulberry32(seed);
+    var world = Math.floor(index/LEVELS_PER_WORLD);
+    var band = bandForWorld(world);
+    var t = index/(TOTAL_LEVELS-1);
+
+    // Capped at 2: the engine merges every adjacent pair in a run simultaneously
+    // each swipe, so a 3-tile group (one pair merges, one tile left over) reduces
+    // in the same left-to-right order this chain was built in — but a 4-tile
+    // group would merge as two independent pairs in the first move instead of
+    // one sequential chain, producing a different number than intended.
+    var Dmax = t < 0.15 ? 1 : 2;
+    var D = randInt(rng, Math.max(1,Dmax-1), Dmax);
+    var opsSeq = [];
+    for(var i=0;i<D;i++) opsSeq.push(choice(rng, band.ops));
+
+    var groupCount = randInt(rng, 1, band.maxGroups);
+    var operandMax = Math.max(6, Math.round(6 + t*26));
+    var operandRange = [1, operandMax];
+
+    var groups = [];
+    var usedTargets = {};
+    for(var g=0; g<groupCount; g++){
+      var chainLen = groupCount>1 ? randInt(rng, Math.max(1,D-1), D) : randInt(rng, 1, D);
+      var chain, attempt=0;
+      do {
+        chain = buildChain(rng, opsSeq, chainLen, operandRange, band.special);
+        attempt++;
+      } while(usedTargets[chain.target]!==undefined && attempt<6);
+      usedTargets[chain.target] = true;
+      groups.push(chain);
+    }
+
+    var orientation = (groupCount===1 && rng()<0.5) ? 'vertical' : 'horizontal';
+    var tilesOut = [];
+    groups.forEach(function(chain, gi){
+      var freezeHere = band.freeze && chain.tiles.length<=3 && rng()<0.3;
+      var offset = freezeHere ? 1 : 0;
+      if(freezeHere){
+        if(orientation==='horizontal') tilesOut.push({r:gi, c:0, type:'freeze'});
+        else tilesOut.push({r:0, c:gi, type:'freeze'});
+      }
+      chain.tiles.forEach(function(tt, ti){
+        var pos = ti+offset;
+        var spec = {type:tt.type};
+        if(tt.type==='num') spec.value = tt.value;
+        if(orientation==='horizontal'){ spec.r=gi; spec.c=pos; } else { spec.r=pos; spec.c=gi; }
+        tilesOut.push(spec);
+      });
+    });
+
+    var buffer = t<0.8 ? 1 : 0;
+    var moves = D + buffer;
+    var targets = groups.map(function(c){ return c.target; });
+    var ops = opsButtonsFor(opsSeq);
+
+    return {index:index, world:world, moves:moves, ops:ops, targets:targets, tiles:tilesOut, opsSeq:opsSeq};
   }
 
   /* ================= LEVEL LOADING ================= */
@@ -605,7 +802,8 @@
 
   function loadDef(def, mode, levelIndex){
     state.board = buildBoard(def);
-    state.target = def.target;
+    state.targets = def.targets.slice();
+    state.achieved = def.targets.map(function(){ return false; });
     state.movesLeft = def.moves;
     state.movesTotal = def.moves;
     state.ops = def.ops;
@@ -614,17 +812,47 @@
     state.won = false;
     state.mode = mode;
     state.levelIndex = levelIndex;
+    state.world = def.world || 0;
     state.tileEls = {};
   }
 
+  /* ================= TIMER ================= */
+  function formatTime(ms){
+    if(ms==null) return '';
+    var tenths = Math.round(ms/100);
+    var m = Math.floor(tenths/600);
+    var s = Math.floor((tenths%600)/10);
+    var t = tenths%10;
+    return m+':'+(s<10?'0':'')+s+'.'+t;
+  }
+  function haltTimer(){
+    if(state.timerHandle){ clearInterval(state.timerHandle); state.timerHandle=null; }
+  }
+  function startTimer(){
+    haltTimer();
+    state.startTime = performance.now();
+    updateTimerDisplay();
+    state.timerHandle = setInterval(updateTimerDisplay, 100);
+  }
+  function stopTimer(){
+    var elapsed = performance.now() - state.startTime;
+    haltTimer();
+    return elapsed;
+  }
+  function updateTimerDisplay(){
+    var c = ctxEls(state.mode);
+    if(c.timeEl) c.timeEl.textContent = formatTime(performance.now()-state.startTime);
+  }
+
   /* ================= RENDERING ================= */
-  var els = {}; // cached per active screen context
   function ctxEls(mode){
     if(mode==='daily'){
       return {
         title: document.getElementById('daily-title'),
-        target: document.getElementById('daily-hud-target'),
+        targetsRow: document.getElementById('daily-targets-row'),
         moves: document.getElementById('daily-hud-moves'),
+        timeEl: document.getElementById('daily-hud-time'),
+        bestEl: null,
         opsRow: document.getElementById('daily-ops-row'),
         boardWrap: document.getElementById('daily-board-wrap'),
         tileLayer: document.getElementById('daily-tile-layer'),
@@ -633,8 +861,10 @@
     }
     return {
       title: document.getElementById('game-title'),
-      target: document.getElementById('hud-target'),
+      targetsRow: document.getElementById('targets-row'),
       moves: document.getElementById('hud-moves'),
+      timeEl: document.getElementById('hud-time'),
+      bestEl: document.getElementById('hud-best'),
       opsRow: document.getElementById('ops-row'),
       boardWrap: document.getElementById('board-wrap'),
       tileLayer: document.getElementById('tile-layer'),
@@ -658,15 +888,29 @@
     });
   }
 
-  function renderHud(){
+  function renderTargets(){
     var c = ctxEls(state.mode);
-    c.target.textContent = state.target;
+    c.targetsRow.innerHTML = '';
+    state.targets.forEach(function(val, i){
+      var chip = document.createElement('div');
+      chip.className = 'target-chip' + (state.achieved[i] ? ' hit' : '');
+      chip.innerHTML = '<span class="tc-num">'+val+'</span>' + (state.achieved[i] ? '<span class="tc-check">✓</span>' : '');
+      c.targetsRow.appendChild(chip);
+    });
+  }
+
+  function renderStats(){
+    var c = ctxEls(state.mode);
     c.moves.textContent = state.movesLeft;
     c.moves.classList.toggle('low', state.movesLeft<=1);
+    if(c.bestEl){
+      var b = progress.best[String(state.levelIndex)];
+      c.bestEl.textContent = b!=null ? ('Best '+formatTime(b)) : '';
+    }
   }
 
   function cellMetrics(boardWrap){
-    var inner = boardWrap.clientWidth - 16; // padding 8px each side
+    var inner = boardWrap.clientWidth - 16;
     var gap = 8;
     var size = (inner - gap*3) / 4;
     return {size:size, gap:gap};
@@ -729,7 +973,8 @@
       }
     });
 
-    renderHud();
+    renderStats();
+    renderTargets();
   }
 
   function drawGridCells(gridEl){
@@ -742,96 +987,119 @@
   }
 
   /* ================= WIN / LOSE ================= */
-  function boardHasTarget(){
-    for(var r=0;r<GRID;r++){
-      for(var c=0;c<GRID;c++){
-        var t = state.board[r][c];
-        if(t && t.type==='num' && Math.abs(t.value - state.target) < 1e-6) return true;
-      }
-    }
-    return false;
-  }
-
   function starsFor(movesUsed, movesTotal){
     if(movesUsed <= Math.ceil(movesTotal/2)) return 3;
     if(movesUsed < movesTotal) return 2;
     return 1;
   }
 
-  function checkEnd(){
+  function updateAchievedAndCheck(){
     if(state.over) return;
-    var hit = boardHasTarget();
-    if(hit){
+    var changed = false;
+    for(var i=0;i<state.targets.length;i++){
+      if(state.achieved[i]) continue;
+      var found = false;
+      for(var r=0;r<GRID && !found;r++){
+        for(var c2=0;c2<GRID && !found;c2++){
+          var t = state.board[r][c2];
+          if(t && t.type==='num' && Math.abs(t.value - state.targets[i]) < 1e-6) found = true;
+        }
+      }
+      if(found){ state.achieved[i] = true; changed = true; }
+    }
+    if(changed) renderTargets();
+
+    var allDone = state.achieved.every(function(a){ return a; });
+    if(allDone){
       state.over = true;
       state.won = true;
+      var elapsed = stopTimer();
       var used = state.movesTotal - state.movesLeft;
-      setTimeout(function(){ showWin(used); }, 200);
+      setTimeout(function(){ showWin(used, elapsed); }, 200);
     } else if(state.movesLeft <= 0){
       state.over = true;
       state.won = false;
+      stopTimer();
       setTimeout(function(){ showLose(); }, 200);
     }
   }
 
-  function showWin(used){
+  function showWin(used, elapsedMs){
     var c = ctxEls(state.mode);
     if(state.mode==='daily'){
       var text = document.getElementById('daily-overlay-text');
-      text.textContent = 'Landed on ' + state.target + ' in ' + used + ' of ' + state.movesTotal + ' moves.';
+      text.textContent = 'Landed on every target in ' + used + ' of ' + state.movesTotal + ' moves (' + formatTime(elapsedMs) + ').';
       document.getElementById('daily-share-box').textContent = buildShareText(currentDailyNum, used, state.movesTotal, true);
+      document.getElementById('daily-overlay-title').textContent = 'Solved!';
       c.overlay.classList.add('show');
       markDailyDone(currentDailyNum, used, true);
       return;
     }
     var stars = starsFor(used, state.movesTotal);
     saveStars(state.levelIndex, stars);
+    var prevBest = progress.best[String(state.levelIndex)];
+    var isNewBest = elapsedMs!=null && (prevBest==null || elapsedMs<prevBest);
+    if(isNewBest){
+      progress.best[String(state.levelIndex)] = Math.round(elapsedMs);
+      saveProgress(progress);
+    }
+    var card = document.getElementById('overlay-title').closest('.overlay-card');
     document.getElementById('overlay-title').textContent = 'Target Reached!';
-    document.getElementById('overlay-title').parentElement.parentElement.classList.remove('lose');
-    document.getElementById('overlay-title').parentElement.parentElement.classList.add('win');
-    document.getElementById('overlay-stars').textContent = '★★★☆☆☆'.slice(0,0) + starGlyphs(stars);
-    document.getElementById('overlay-text').textContent = 'Solved in ' + used + ' of ' + state.movesTotal + ' moves.';
+    card.parentElement.classList.remove('lose');
+    card.parentElement.classList.add('win');
+    document.getElementById('overlay-stars').textContent = starGlyphs(stars);
+    document.getElementById('overlay-text').textContent = 'Solved in ' + used + ' of ' + state.movesTotal + ' moves — ' + formatTime(elapsedMs) + (isNewBest ? ' · New Best!' : '');
     var actions = document.getElementById('overlay-actions');
     actions.innerHTML = '';
-    var hasNext = state.levelIndex < LEVELS.length-1;
+    var hasNext = state.levelIndex < TOTAL_LEVELS-1;
     if(hasNext){
-      actions.appendChild(makeBtn('Next Island', 'btn btn-primary', function(){
+      actions.appendChild(makeBtn('Next Level', 'btn btn-primary', function(){
         c.overlay.classList.remove('show');
+        goTo('screen-game');
         startLevel(state.levelIndex+1);
       }));
+    } else {
+      var done = document.createElement('p');
+      done.className = 'overlay-done';
+      done.textContent = "You've drifted through all 1,200 islands.";
+      actions.parentElement.insertBefore(done, actions);
     }
     actions.appendChild(makeBtn('Level Select', 'btn btn-ghost', function(){
       c.overlay.classList.remove('show');
-      goTo('screen-levels');
-      renderLevelSelect();
+      goTo('screen-path');
+      renderPath(state.world);
     }));
     c.overlay.classList.add('show');
   }
 
   function showLose(){
     var c = ctxEls(state.mode);
+    var targetsText = state.targets.join(', ');
     if(state.mode==='daily'){
       var text = document.getElementById('daily-overlay-text');
-      text.textContent = 'Out of moves. The target ' + state.target + ' drifted away — try again tomorrow, or right now.';
+      text.textContent = 'Out of moves. The target ' + targetsText + ' drifted away — try again tomorrow, or right now.';
       document.getElementById('daily-share-box').textContent = buildShareText(currentDailyNum, state.movesTotal, state.movesTotal, false);
       document.getElementById('daily-overlay-title').textContent = 'Out of Moves';
       c.overlay.classList.add('show');
       return;
     }
+    var card = document.getElementById('overlay-title').closest('.overlay-card');
     document.getElementById('overlay-title').textContent = 'Out of Moves';
-    document.getElementById('overlay-title').parentElement.parentElement.classList.remove('win');
-    document.getElementById('overlay-title').parentElement.parentElement.classList.add('lose');
+    card.parentElement.classList.remove('win');
+    card.parentElement.classList.add('lose');
     document.getElementById('overlay-stars').textContent = '';
-    document.getElementById('overlay-text').textContent = 'The target ' + state.target + ' stayed out of reach. Give it another drift.';
+    document.getElementById('overlay-text').textContent = 'The target ' + targetsText + ' stayed out of reach. Give it another drift.';
     var actions = document.getElementById('overlay-actions');
     actions.innerHTML = '';
     actions.appendChild(makeBtn('Try Again', 'btn btn-primary', function(){
       c.overlay.classList.remove('show');
+      goTo('screen-game');
       startLevel(state.levelIndex);
     }));
     actions.appendChild(makeBtn('Level Select', 'btn btn-ghost', function(){
       c.overlay.classList.remove('show');
-      goTo('screen-levels');
-      renderLevelSelect();
+      goTo('screen-path');
+      renderPath(state.world);
     }));
     c.overlay.classList.add('show');
   }
@@ -857,56 +1125,144 @@
     saveProgress(progress);
   }
 
-  /* ================= LEVEL SELECT ================= */
+  /* ================= WORLD SELECT ================= */
   function isUnlocked(levelIndex){
     if(levelIndex===0) return true;
     return (progress.stars[String(levelIndex-1)] || 0) > 0;
   }
+  function isWorldUnlocked(worldIndex){
+    if(worldIndex===0) return true;
+    return (progress.stars[String(worldIndex*LEVELS_PER_WORLD - 1)] || 0) > 0;
+  }
 
-  function renderLevelSelect(){
-    var root = document.getElementById('levels-scroll');
+  function renderWorldSelect(){
+    var root = document.getElementById('worlds-scroll');
     root.innerHTML = '';
-    WORLDS.forEach(function(world, wIdx){
-      var block = document.createElement('div');
-      block.className = 'world-block';
-      var head = document.createElement('div');
-      head.className = 'world-head';
-      head.innerHTML = '<h3>'+world.name+'</h3><p class="world-blurb">'+world.blurb+'</p>';
-      block.appendChild(head);
-      var grid = document.createElement('div');
-      grid.className = 'level-grid';
-      LEVELS.forEach(function(lvl, i){
-        if(lvl.world !== wIdx) return;
-        var unlocked = isUnlocked(i);
-        var stars = progress.stars[String(i)] || 0;
-        var card = document.createElement('div');
-        card.className = 'level-card' + (unlocked?'':' locked');
-        var localNum = LEVELS.slice(0,i+1).filter(function(l){return l.world===wIdx;}).length;
-        card.innerHTML = '<div class="num">'+localNum+'</div><div class="stars">'+(unlocked? starGlyphs(stars):'')+'</div>';
-        if(unlocked){
-          card.addEventListener('click', function(){
-            goTo('screen-game');
-            startLevel(i);
-          });
-        }
-        grid.appendChild(card);
-      });
-      block.appendChild(grid);
-      root.appendChild(block);
+    WORLDS.forEach(function(w, idx){
+      var startIdx = idx*LEVELS_PER_WORLD;
+      var doneCount = 0;
+      for(var i=0;i<LEVELS_PER_WORLD;i++){
+        if((progress.stars[String(startIdx+i)]||0) > 0) doneCount++;
+      }
+      var unlocked = isWorldUnlocked(idx);
+      var card = document.createElement('div');
+      card.className = 'world-card' + (unlocked?'':' locked');
+      var body = unlocked
+        ? '<div class="wc-progress"><div class="wc-bar"><span style="width:'+Math.round(doneCount/LEVELS_PER_WORLD*100)+'%"></span></div><span class="wc-count">'+doneCount+'/'+LEVELS_PER_WORLD+'</span></div>'
+        : '<span class="wc-locked-label">Locked</span>';
+      card.innerHTML =
+        '<div class="wc-num">'+(idx+1)+'</div>'+
+        '<div class="wc-body"><h3>'+w.name+'</h3><p>'+w.blurb+'</p>'+body+'</div>';
+      if(unlocked){
+        card.addEventListener('click', function(i){
+          return function(){
+            goToTracked('screen-path');
+            renderPath(i);
+          };
+        }(idx));
+      }
+      root.appendChild(card);
+    });
+  }
+
+  /* ================= PATH ================= */
+  var currentWorld = 0;
+  function nodePos(i){
+    var spacingY = 88;
+    var amplitude = 92;
+    var centerX = 150;
+    return {x: centerX + Math.sin(i*0.9)*amplitude, y: 56 + i*spacingY};
+  }
+  function smoothPath(points){
+    if(points.length<2) return points.length===1 ? ('M '+points[0].x+' '+points[0].y) : '';
+    var d = 'M '+points[0].x+' '+points[0].y+' ';
+    for(var i=1;i<points.length;i++){
+      var p0=points[i-1], p1=points[i];
+      var mx=(p0.x+p1.x)/2, my=(p0.y+p1.y)/2;
+      d += 'Q '+p0.x+' '+p0.y+' '+mx+' '+my+' ';
+    }
+    d += 'L '+points[points.length-1].x+' '+points[points.length-1].y;
+    return d;
+  }
+
+  function renderPath(worldIndex){
+    currentWorld = worldIndex;
+    var world = WORLDS[worldIndex];
+    document.getElementById('path-title').textContent = world.name;
+    var root = document.getElementById('path-canvas');
+    root.innerHTML = '';
+
+    var startIdx = worldIndex*LEVELS_PER_WORLD;
+    var pts = [];
+    for(var i=0;i<LEVELS_PER_WORLD;i++) pts.push(nodePos(i));
+    var height = pts[pts.length-1].y + 70;
+    root.style.height = height+'px';
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS,'svg');
+    svg.setAttribute('viewBox','0 0 300 '+height);
+    svg.setAttribute('preserveAspectRatio','none');
+    svg.setAttribute('class','path-svg');
+    svg.style.height = height+'px';
+
+    var bg = document.createElementNS(svgNS,'path');
+    bg.setAttribute('d', smoothPath(pts));
+    bg.setAttribute('class','path-line-bg');
+    svg.appendChild(bg);
+
+    var lastDone = -1;
+    for(var i2=0;i2<LEVELS_PER_WORLD;i2++){
+      if((progress.stars[String(startIdx+i2)]||0) > 0) lastDone = i2;
+    }
+    if(lastDone>=0){
+      var fg = document.createElementNS(svgNS,'path');
+      fg.setAttribute('d', smoothPath(pts.slice(0,lastDone+1)));
+      fg.setAttribute('class','path-line-fg');
+      svg.appendChild(fg);
+    }
+    root.appendChild(svg);
+
+    for(var i3=0;i3<LEVELS_PER_WORLD;i3++){
+      var gi = startIdx+i3;
+      var unlocked = isUnlocked(gi);
+      var stars = progress.stars[String(gi)] || 0;
+      var best = progress.best[String(gi)];
+      var milestone = (i3+1)%10===0;
+      var node = document.createElement('button');
+      node.className = 'path-node' + (milestone?' milestone':'') + (unlocked?'':' locked') + (stars>0?' done':'');
+      node.style.left = (pts[i3].x/300*100)+'%';
+      node.style.top = pts[i3].y+'px';
+      node.innerHTML = unlocked
+        ? '<span class="pn-num">'+(i3+1)+'</span>'+(stars>0?'<span class="pn-stars">'+starGlyphs(stars)+'</span>':'')+(best!=null?'<span class="pn-time">'+formatTime(best)+'</span>':'')
+        : '<span class="pn-lock">🔒</span>';
+      if(unlocked){
+        node.addEventListener('click', function(idx){
+          return function(){ goTo('screen-game'); startLevel(idx); };
+        }(gi));
+      }
+      root.appendChild(node);
+    }
+
+    requestAnimationFrame(function(){
+      var scroller = document.querySelector('#screen-path .path-scroll');
+      var target = Math.max(0, lastDone);
+      var y = pts[target] ? pts[target].y : 0;
+      scroller.scrollTop = Math.max(0, y-320);
     });
   }
 
   function startLevel(index){
-    var def = LEVELS[index];
+    var def = generateLevel(index);
     loadDef(def, 'level', index);
     var c = ctxEls('level');
     drawGridCells(document.getElementById('board-grid'));
     c.tileLayer.innerHTML = '';
     c.overlay.classList.remove('show');
-    document.getElementById('game-title').textContent = WORLDS[def.world].name;
+    document.getElementById('game-title').textContent = WORLDS[def.world].name + ' · ' + ((index%LEVELS_PER_WORLD)+1);
     renderOps();
     renderBoard();
     attachSwipe(c.boardWrap, 'level');
+    startTimer();
   }
 
   /* ================= DAILY ================= */
@@ -941,7 +1297,8 @@
   function startDaily(){
     var d = dailyIndexAndNumber();
     currentDailyNum = d.num;
-    var def = DAILY_POOL[d.idx];
+    var raw = DAILY_POOL[d.idx];
+    var def = {world:0, moves:raw.moves, ops:raw.ops, targets:[raw.target], tiles:raw.tiles};
     loadDef(def, 'daily', d.idx);
     var c = ctxEls('daily');
     drawGridCells(document.getElementById('daily-board-grid'));
@@ -952,6 +1309,7 @@
     renderOps();
     renderBoard();
     attachSwipe(c.boardWrap, 'daily');
+    startTimer();
   }
 
   /* ================= SWIPE / INPUT ================= */
@@ -1001,7 +1359,7 @@
   function doSwipe(dir){
     if(!state.mode || state.over) return;
     var did = swipe(dir);
-    if(did) checkEnd();
+    if(did) updateAchievedAndCheck();
   }
 
   window.addEventListener('resize', function(){
@@ -1010,6 +1368,7 @@
 
   /* ================= NAV ================= */
   function goTo(id){
+    haltTimer();
     document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
     document.getElementById(id).classList.add('active');
   }
@@ -1021,8 +1380,8 @@
   }
 
   document.getElementById('btn-play').addEventListener('click', function(){
-    renderLevelSelect();
-    goToTracked('screen-levels');
+    goToTracked('screen-worlds');
+    renderWorldSelect();
   });
   document.getElementById('btn-daily').addEventListener('click', function(){
     goToTracked('screen-daily');
@@ -1040,14 +1399,20 @@
       goTo(navHistory[navHistory.length-1] || 'screen-title');
     });
   });
+  document.getElementById('path-back').addEventListener('click', function(){
+    goTo('screen-worlds');
+    renderWorldSelect();
+  });
   document.getElementById('game-back').addEventListener('click', function(){
-    goTo('screen-levels');
-    renderLevelSelect();
+    goTo('screen-path');
+    renderPath(state.world);
   });
   document.getElementById('game-restart').addEventListener('click', function(){
+    goTo('screen-game');
     startLevel(state.levelIndex);
   });
   document.getElementById('daily-restart').addEventListener('click', function(){
+    goTo('screen-daily');
     startDaily();
   });
   document.getElementById('daily-copy').addEventListener('click', function(){
